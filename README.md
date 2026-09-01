@@ -1,1 +1,0 @@
-# junseok-vs-yesung
