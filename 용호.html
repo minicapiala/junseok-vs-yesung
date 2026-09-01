@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>준석 vs 예성 - 카드 숫자 게임</title>
+<style>
+*{box-sizing:border-box} body{margin:0;min-height:100vh;font-family:Arial,sans-serif;background:linear-gradient(135deg,#111827,#312e81);color:white;padding:24px}
+.wrap{max-width:850px;margin:auto;text-align:center}.top{display:flex;justify-content:space-between;align-items:center;background:#ffffff12;padding:14px 20px;border-radius:16px}
+h1{font-size:32px;margin:22px 0 6px}.rule{color:#cbd5e1;margin-bottom:24px}
+.table{display:grid;grid-template-columns:1fr 1fr;gap:18px}.player{background:#ffffff12;border:1px solid #ffffff22;border-radius:22px;padding:20px}
+.name{font-size:24px;font-weight:800;margin-bottom:16px}.cards{display:flex;justify-content:center;gap:10px;min-height:125px}.card{width:80px;height:112px;background:white;color:#111827;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:900;box-shadow:0 8px 20px #0005}
+.card.back{background:repeating-linear-gradient(45deg,#4f46e5 0 8px,#3730a3 8px 16px);color:white;border:4px solid white;font-size:25px}.result{margin-top:14px;font-size:20px;font-weight:700}
+.controls{margin-top:22px}.buttons{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}button{border:0;border-radius:13px;padding:15px 25px;font-size:17px;font-weight:800;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}.start{background:#facc15;color:#171717}.chooseJ{background:#60a5fa}.chooseY{background:#f472b6}
+#status{min-height:28px;margin:18px 0;font-weight:700}.score{font-size:18px}.small{color:#94a3b8;font-size:13px;margin-top:20px}
+@media(max-width:600px){h1{font-size:25px}.table{grid-template-columns:1fr}.card{width:68px;height:98px}.top{font-size:14px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><span>🏆 게임 점수: <b id="score">0</b></span><span>최고 점수: <b id="best">0</b></span></div>
+  <h1>🃏 준석 vs 예성</h1>
+  <div class="rule">카드 2장의 합이 5 이하라면 카드 한 장을 더 받습니다.</div>
+
+  <div class="table">
+    <div class="player">
+      <div class="name">👤 준석</div>
+      <div class="cards" id="jCards"></div>
+      <div class="result" id="jResult">?</div>
+    </div>
+    <div class="player">
+      <div class="name">👤 예성</div>
+      <div class="cards" id="yCards"></div>
+      <div class="result" id="yResult">?</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="start" id="start" onclick="deal()">🃏 카드 나눠주기</button>
+    <div id="status"></div>
+    <div class="buttons">
+      <button class="chooseJ" id="pickJ" onclick="pick('j')" disabled>준석이 더 높다</button>
+      <button class="chooseY" id="pickY" onclick="pick('y')" disabled>예성이 더 높다</button>
+    </div>
+    <button class="start" id="next" onclick="deal()" style="display:none;margin-top:14px">다음 게임</button>
+  </div>
+  <div class="small">카드 숫자는 1~10. 합계의 일의 자리 숫자를 최종 숫자로 사용합니다.</div>
+</div>
+
+<script>
+let score=0, best=Number(localStorage.getItem('vsBest')||0);
+document.getElementById('best').textContent=best;
+
+function card(){return Math.floor(Math.random()*10)+1}
+function finalHand(){
+  let arr=[card(),card()];
+  let value=(arr[0]+arr[1])%10;
+  if(value<=5) arr.push(card());
+  value=arr.reduce((a,b)=>a+b,0)%10;
+  return {arr,value,extra:arr.length===3};
+}
+function show(id,h){
+  const box=document.getElementById(id+'Cards');
+  box.innerHTML=h.arr.map((n,i)=>`<div class="card">${n}</div>`).join('');
+  document.getElementById(id+'Result').textContent=
+    `최종 숫자: ${h.value}`+(h.extra?'  ✨ 3번째 카드':'');
+}
+function deal(){
+  const j=finalHand(), y=finalHand();
+  show('j',j); show('y',y);
+  window.round={j,y};
+  document.getElementById('status').textContent='🤔 누가 더 높은 숫자를 가지고 있을까요?';
+  document.getElementById('pickJ').disabled=false;
+  document.getElementById('pickY').disabled=false;
+  document.getElementById('start').disabled=true;
+  document.getElementById('next').style.display='none';
+}
+function pick(who){
+  const {j,y}=window.round;
+  let winner=j.value>y.value?'j':y.value>j.value?'y':'draw';
+  let msg;
+  if(winner==='draw') msg='🤝 무승부! 점수 변화 없음.';
+  else if(who===winner){
+    score++; msg='🎉 정답! +1점';
+    if(score>best){best=score;localStorage.setItem('vsBest',best);document.getElementById('best').textContent=best;msg+=' 🏆 최고 점수!'}
+  } else msg='❌ 틀렸어요!';
+  document.getElementById('score').textContent=score;
+  document.getElementById('status').textContent=`${msg}  (준석 ${j.value} : 예성 ${y.value})`;
+  document.getElementById('pickJ').disabled=true;
+  document.getElementById('pickY').disabled=true;
+  document.getElementById('start').disabled=false;
+  document.getElementById('next').style.display='inline-block';
+}
+</script>
+</body>
+</html>
